@@ -1,17 +1,13 @@
-# Use Amazon Corretto JDK 17 as the base image
-FROM amazoncorretto:17
-
-# Maintainer information (modern label format recommended)
-LABEL maintainer="Abhishek Jadon <jadonabhi0@gmail.com>"
-
-# Set working directory inside the container
+# Stage 1: Build the JAR
+FROM maven:3.9.2-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copy the JAR file into the container
-COPY target/kube.jar kube.jar
-
-# Expose the port your Spring Boot app runs on
+# Stage 2: Run the JAR
+FROM amazoncorretto:17
+WORKDIR /app
+COPY --from=build /app/target/kube.jar kube.jar
 EXPOSE 8080
-
-# Run the application
-ENTRYPOINT ["java", "-jar", "kube.jar"]
+CMD ["java", "-jar", "kube.jar"]
